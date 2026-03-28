@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BATTLESHIP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Animated background -->
+    <div class="bg-grid"></div>
+    <div class="scanline"></div>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen" class="screen active">
+      <div class="logo-block">
+        <div class="logo-sub">NAVAL COMMAND</div>
+        <h1 class="logo">BATTLESHIP</h1>
+        <div class="logo-sub">TACTICAL WARFARE</div>
+      </div>
+
+      <div class="setup-panel">
+        <div class="setup-header">
+          <span class="blink">▶</span> DEPLOY YOUR FLEET
+          <span class="blink">◀</span>
+        </div>
+
+        <div class="ship-list" id="ship-list">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="setup-board-wrap">
+          <div class="board-label">YOUR GRID — PLACE SHIPS</div>
+          <div class="board-container">
+            <div class="board" id="setup-board"></div>
+          </div>
+          <div class="setup-controls">
+            <button id="rotate-btn" class="btn btn-secondary">
+              ⟳ ROTATE <span id="orientation-label">HORIZONTAL</span>
+            </button>
+            <button id="random-btn" class="btn btn-secondary">
+              ⚄ RANDOM PLACEMENT
+            </button>
+            <button id="clear-btn" class="btn btn-ghost">✕ CLEAR</button>
+          </div>
+        </div>
+
+        <button id="start-btn" class="btn btn-primary" disabled>
+          ⚓ ENGAGE BATTLE
+        </button>
+      </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen">
+      <header class="game-header">
+        <div class="header-title">
+          <span class="title-small">NAVAL COMMAND</span>
+          <span class="title-main">BATTLESHIP</span>
+        </div>
+        <div class="status-bar">
+          <div class="status-item">
+            <span class="status-label">PHASE</span>
+            <span class="status-value" id="phase-indicator">YOUR TURN</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">SHOTS</span>
+            <span class="status-value" id="shot-counter">0</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">HITS</span>
+            <span class="status-value hit-color" id="hit-counter">0</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="game-area">
+        <div class="fleet-panel" id="player-fleet-panel">
+          <div class="fleet-title">YOUR FLEET</div>
+          <div class="fleet-ships" id="player-fleet"></div>
+        </div>
+
+        <div class="boards-wrap">
+          <div class="board-section enemy-section">
+            <div class="board-label">ENEMY WATERS — CLICK TO FIRE</div>
+            <div class="board-container">
+              <div class="board" id="enemy-board"></div>
+            </div>
+            <div class="board-stats">
+              <span
+                >ENEMY SHIPS REMAINING:
+                <strong id="enemy-ships-left">5</strong></span
+              >
+            </div>
+          </div>
+
+          <div class="log-panel">
+            <div class="log-title">⚡ BATTLE LOG</div>
+            <div class="log-entries" id="log-entries"></div>
+          </div>
+
+          <div class="board-section player-section">
+            <div class="board-label">YOUR WATERS — DEFEND</div>
+            <div class="board-container">
+              <div class="board" id="player-board"></div>
+            </div>
+            <div class="board-stats">
+              <span
+                >YOUR SHIPS REMAINING:
+                <strong id="player-ships-left">5</strong></span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="fleet-panel" id="enemy-fleet-panel">
+          <div class="fleet-title">ENEMY FLEET</div>
+          <div class="fleet-ships" id="enemy-fleet"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULT SCREEN -->
+    <div id="result-screen" class="screen">
+      <div class="result-content">
+        <div class="result-icon" id="result-icon">⚓</div>
+        <div class="result-label" id="result-label">VICTORY</div>
+        <h2 class="result-title" id="result-title">MISSION COMPLETE</h2>
+        <p class="result-sub" id="result-sub">You sank all enemy ships!</p>
+        <div class="result-stats">
+          <div class="stat-box">
+            <span class="stat-num" id="final-shots">0</span>
+            <span class="stat-lbl">SHOTS FIRED</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="final-hits">0</span>
+            <span class="stat-lbl">DIRECT HITS</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="final-accuracy">0%</span>
+            <span class="stat-lbl">ACCURACY</span>
+          </div>
+        </div>
+        <button id="play-again-btn" class="btn btn-primary">
+          ⚓ PLAY AGAIN
+        </button>
+      </div>
+    </div>
+
+    <!-- Explosion overlay -->
+    <div class="explosion-overlay" id="explosion-overlay"></div>
+
+    <script src="game.js"></script>
+  </body>
+</html>
