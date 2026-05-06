@@ -354,7 +354,7 @@ function playerFire(r,c) {
       addLog(`▶ HIT AT ${label(r,c)}! FIRE AGAIN!`, 'p-hit');
     }
 
-    flashScreen(r,c,true);
+    flashScreen('enemy-board', r, c, true);
     renderEnemyBoard();
     updateFleetMini('enemy-fleet', S.enemyShips);
     updateStats();
@@ -369,7 +369,7 @@ function playerFire(r,c) {
     // MISS → hand off to enemy
     g.miss=true;
     addLog(`○ MISS AT ${label(r,c)}`, 'p-miss');
-    flashScreen(r,c,false);
+    flashScreen('enemy-board', r, c, false);
     renderEnemyBoard();
     updateStats();
     setPhase('ENEMY TURN', false);
@@ -416,6 +416,7 @@ const ai = {
       const g=S.playerGrid[r][c];
       if(!g.hit&&!g.miss&&!g.safe&&!this.tried.has(`${r},${c}`)) all.push([r,c]);
     }
+    if(all.length===0) return null;
     return all[Math.floor(Math.random()*all.length)];
   },
 
@@ -439,12 +440,21 @@ const ai = {
 };
 
 function enemyTurn() {
-  const [r,c]=ai.pick();
+  const target = ai.pick();
+  if(!target) {
+    S.playerTurn=true;
+    setPhase('YOUR TURN', true);
+    document.getElementById('enemy-board').classList.remove('locked');
+    return;
+  }
+  const [r,c]=target;
   ai.tried.add(`${r},${c}`);
   const g=S.playerGrid[r][c];
+  let enemyKeepsTurn = false;
 
   if(g.ship) {
     g.hit=true;
+    enemyKeepsTurn = true;
     const ship=S.playerShips.find(s=>s.id===g.ship);
     const segIdx=ship.cells.findIndex(([sr,sc])=>sr===r&&sc===c);
     ship.hitCells.add(segIdx);
@@ -463,6 +473,7 @@ function enemyTurn() {
       ai.onHit(r,c,false);
     }
 
+    flashScreen('player-board', r, c, true);
     renderPlayerBoard();
     updateFleetMini('player-fleet', S.playerShips);
     updateStats();
@@ -472,23 +483,47 @@ function enemyTurn() {
     g.miss=true;
     addLog(`○ ENEMY MISSED AT ${label(r,c)}`, 'e-miss');
     ai.onMiss(r,c);
+    flashScreen('player-board', r, c, false);
     renderPlayerBoard();
   }
 
   updateStats();
-  S.playerTurn=true;
-  setPhase('YOUR TURN', true);
-  document.getElementById('enemy-board').classList.remove('locked');
+  if(enemyKeepsTurn) {
+    S.playerTurn=false;
+    setPhase('ENEMY TURN', false);
+    document.getElementById('enemy-board').classList.add('locked');
+    setTimeout(()=>{ if(!S.over) enemyTurn(); }, 950);
+  } else {
+    S.playerTurn=true;
+    setPhase('YOUR TURN', true);
+    document.getElementById('enemy-board').classList.remove('locked');
+  }
 }
 
 
-function flashScreen(r,c,isHit) {
+function flashScreen(boardId, r, c, isHit) {
   const overlay=document.getElementById('explosion-overlay');
-  const board=document.getElementById('enemy-board');
+  const missile=document.getElementById('missile-overlay');
+  const board=document.getElementById(boardId);
+  if(!overlay || !missile || !board) return;
   const rect=board.getBoundingClientRect();
   const cs=rect.width/GRID;
   const x=((c*cs+cs/2+rect.left)/window.innerWidth)*100;
   const y=((r*cs+cs/2+rect.top)/window.innerHeight)*100;
+  const sx = x - 12;
+  const sy = y - 22;
+
+  missile.className='missile-overlay';
+  overlay.className='explosion-overlay';
+  void missile.offsetWidth;
+
+  missile.style.setProperty('--msx',`${sx}%`);
+  missile.style.setProperty('--msy',`${sy}%`);
+  missile.style.setProperty('--mtx',`${x}%`);
+  missile.style.setProperty('--mty',`${y}%`);
+  missile.className='missile-overlay missile-flight';
+  setTimeout(()=>{ missile.className='missile-overlay'; },420);
+
   overlay.style.setProperty('--ex',`${x}%`);
   overlay.style.setProperty('--ey',`${y}%`);
   overlay.className=`explosion-overlay ${isHit?'hit-flash':'miss-flash'}`;
