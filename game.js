@@ -392,6 +392,7 @@ const ai = {
 
     while(this.mode==='target' && this.queue.length>0) {
       const [r,c]=this.queue.shift();
+      if(!inBounds(r,c)) continue;
       const key=`${r},${c}`;
       const g=S.playerGrid[r][c];
       if(!this.tried.has(key) && inBounds(r,c) && !g.hit && !g.miss && !g.safe) return [r,c];
@@ -441,60 +442,67 @@ const ai = {
 };
 
 function enemyTurn() {
-  const target = ai.pick();
-  if(!target) {
-    S.playerTurn=true;
-    setPhase('YOUR TURN', true);
-    document.getElementById('enemy-board').classList.remove('locked');
-    return;
-  }
-  const [r,c]=target;
-  ai.tried.add(`${r},${c}`);
-  const g=S.playerGrid[r][c];
-  let enemyKeepsTurn = false;
+  try {
+    const target = ai.pick();
+    if(!target) {
+      S.playerTurn=true;
+      setPhase('YOUR TURN', true);
+      document.getElementById('enemy-board').classList.remove('locked');
+      return;
+    }
+    const [r,c]=target;
+    ai.tried.add(`${r},${c}`);
+    const g=S.playerGrid[r][c];
+    let enemyKeepsTurn = false;
 
-  if(g.ship) {
-    g.hit=true;
-    enemyKeepsTurn = true;
-    const ship=S.playerShips.find(s=>s.id===g.ship);
-    const segIdx=ship.cells.findIndex(([sr,sc])=>sr===r&&sc===c);
-    ship.hitCells.add(segIdx);
-    ship.hits++;
+    if(g.ship) {
+      g.hit=true;
+      enemyKeepsTurn = true;
+      const ship=S.playerShips.find(s=>s.id===g.ship);
+      const segIdx=ship.cells.findIndex(([sr,sc])=>sr===r&&sc===c);
+      ship.hitCells.add(segIdx);
+      ship.hits++;
 
-    if(ship.hits>=ship.size) {
-      ship.sunk=true;
-      ship.cells.forEach(([sr,sc])=>{ S.playerGrid[sr][sc].hit=true; });
-      const safe=revealSafeZone(S.playerGrid, ship);
+      if(ship.hits>=ship.size) {
+        ship.sunk=true;
+        ship.cells.forEach(([sr,sc])=>{ S.playerGrid[sr][sc].hit=true; });
+        const safe=revealSafeZone(S.playerGrid, ship);
 
-      safe.forEach(([nr,nc])=>ai.tried.add(`${nr},${nc}`));
-      addLog(`ENEMY SANK YOUR ${ship.name}!`, 'l-sunk', 'bi-exclamation-octagon-fill');
-      ai.onHit(r,c,true);
+        safe.forEach(([nr,nc])=>ai.tried.add(`${nr},${nc}`));
+        addLog(`ENEMY SANK YOUR ${ship.name}!`, 'l-sunk', 'bi-exclamation-octagon-fill');
+        ai.onHit(r,c,true);
+      } else {
+        addLog(`ENEMY HIT ${ship.name} AT ${label(r,c)}!`, 'e-hit', 'bi-crosshair2');
+        ai.onHit(r,c,false);
+      }
+
+      flashScreen('player-board', r, c, true);
+      renderPlayerBoard();
+      updateFleetMini('player-fleet', S.playerShips);
+      updateStats();
+
+      if(S.playerShips.every(s=>s.sunk)) { setTimeout(()=>endGame(false),700); return; }
     } else {
-      addLog(`ENEMY HIT ${ship.name} AT ${label(r,c)}!`, 'e-hit', 'bi-crosshair2');
-      ai.onHit(r,c,false);
+      g.miss=true;
+      addLog(`ENEMY MISSED AT ${label(r,c)}`, 'e-miss', 'bi-circle');
+      ai.onMiss(r,c);
+      flashScreen('player-board', r, c, false);
+      renderPlayerBoard();
     }
 
-    flashScreen('player-board', r, c, true);
-    renderPlayerBoard();
-    updateFleetMini('player-fleet', S.playerShips);
     updateStats();
-
-    if(S.playerShips.every(s=>s.sunk)) { setTimeout(()=>endGame(false),700); return; }
-  } else {
-    g.miss=true;
-    addLog(`ENEMY MISSED AT ${label(r,c)}`, 'e-miss', 'bi-circle');
-    ai.onMiss(r,c);
-    flashScreen('player-board', r, c, false);
-    renderPlayerBoard();
-  }
-
-  updateStats();
-  if(enemyKeepsTurn) {
-    S.playerTurn=false;
-    setPhase('ENEMY TURN', false);
-    document.getElementById('enemy-board').classList.add('locked');
-    setTimeout(()=>{ if(!S.over) enemyTurn(); }, BOT_SHOT_DELAY);
-  } else {
+    if(enemyKeepsTurn) {
+      S.playerTurn=false;
+      setPhase('ENEMY TURN', false);
+      document.getElementById('enemy-board').classList.add('locked');
+      setTimeout(()=>{ if(!S.over) enemyTurn(); }, BOT_SHOT_DELAY);
+    } else {
+      S.playerTurn=true;
+      setPhase('YOUR TURN', true);
+      document.getElementById('enemy-board').classList.remove('locked');
+    }
+  } catch (err) {
+    console.error('enemyTurn failed:', err);
     S.playerTurn=true;
     setPhase('YOUR TURN', true);
     document.getElementById('enemy-board').classList.remove('locked');
