@@ -55,6 +55,14 @@ html, body {
 }
 .screen.active { display: flex; }
 
+#game-screen.screen.active {
+  justify-content: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 8px;
+  padding-bottom: 16px;
+}
+
 
 .board-label {
   font-family: var(--font-d);
