@@ -159,7 +159,7 @@ html, body {
   border-color: var(--danger);
   box-shadow: none;
 }
-.cell.hit::after  { content: '✕'; color: #ffffff; font-weight: bold; }
+.cell.hit::after  { content: 'X'; color: #ffffff; font-weight: 700; }
 
 
 .cell.miss {
@@ -167,7 +167,7 @@ html, body {
   border-color: #35556f;
 }
 .cell.miss::after {
-  content: '•';
+  content: 'o';
   color: #ffffff;
   font-size: calc(var(--cell)*.68);
   text-shadow: 0 0 2px rgba(255,255,255,.8);
@@ -179,7 +179,11 @@ html, body {
   border-color: #744747;
   box-shadow: none;
 }
-.cell.sunk::after { content: '☠'; color: #f2d9d9; }
+.cell.sunk::after {
+  content: 'X';
+  color: #ffe3e3;
+  font-weight: 700;
+}
 
 
 .cell.safe-zone {
@@ -188,7 +192,7 @@ html, body {
   cursor: not-allowed;
   pointer-events: none;
 }
-.cell.safe-zone::after { content: '○'; color: #96abbe; font-size: calc(var(--cell)*.5); }
+.cell.safe-zone::after { content: 'o'; color: #96abbe; font-size: calc(var(--cell)*.5); }
 
 
 .cell.no-fire { cursor: not-allowed; pointer-events: none; }
