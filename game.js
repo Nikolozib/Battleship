@@ -1,4 +1,3 @@
-
 'use strict';
 
 const GRID  = 10;
@@ -333,9 +332,9 @@ function playerFire(r,c) {
   const g=S.enemyGrid[r][c];
   if(g.hit||g.miss||g.safe) return;
 
+  // Lock turn during processing to prevent double-clicks
+  S.playerTurn = false;
   S.shots++;
-  setPhase('ENEMY TURN', false);
-  document.getElementById('enemy-board').classList.add('locked');
 
   if(g.ship) {
     g.hit=true;
@@ -347,14 +346,12 @@ function playerFire(r,c) {
 
     if(ship.hits>=ship.size) {
       ship.sunk=true;
-
       ship.cells.forEach(([sr,sc])=>{ S.enemyGrid[sr][sc].hit=true; });
-
       const safe=revealSafeZone(S.enemyGrid, ship);
       addLog(`☠ YOU SANK THEIR ${ship.name}!`, 'l-sunk');
       if(safe.length) addLog(`○ ${safe.length} SAFE ZONE CELLS REVEALED`, 'l-safe');
     } else {
-      addLog(`▶ YOU HIT ${label(r,c)}!`, 'p-hit');
+      addLog(`▶ HIT AT ${label(r,c)}! FIRE AGAIN!`, 'p-hit');
     }
 
     flashScreen(r,c,true);
@@ -363,14 +360,22 @@ function playerFire(r,c) {
     updateStats();
 
     if(S.enemyShips.every(s=>s.sunk)) { setTimeout(()=>endGame(true),700); return; }
+
+    // HIT → player keeps their turn
+    S.playerTurn = true;
+    setPhase('YOUR TURN', true);
+
   } else {
+    // MISS → hand off to enemy
     g.miss=true;
     addLog(`○ MISS AT ${label(r,c)}`, 'p-miss');
     flashScreen(r,c,false);
     renderEnemyBoard();
+    updateStats();
+    setPhase('ENEMY TURN', false);
+    document.getElementById('enemy-board').classList.add('locked');
+    setTimeout(()=>{ if(!S.over) enemyTurn(); }, 950);
   }
-  updateStats();
-  setTimeout(()=>{ if(!S.over) enemyTurn(); }, 950);
 }
 
 
