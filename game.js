@@ -3,6 +3,7 @@
 const GRID  = 10;
 const COLS  = ['A','B','C','D','E','F','G','H','I','J'];
 const DIRS  = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+const BOT_SHOT_DELAY = 520;
 
 const SHIP_DEFS = [
   { id:'carrier',    name:'CARRIER',    size:5 },
@@ -318,11 +319,11 @@ function setPhase(text, isPlayer) {
   el.className='status-value'+(isPlayer?' your-turn':'');
 }
 
-function addLog(msg, cls) {
+function addLog(msg, cls, icon='') {
   const c=document.getElementById('log-entries');
   const d=document.createElement('div');
   d.className=`log-entry ${cls}`;
-  d.textContent=msg;
+  d.innerHTML = icon ? `<i class="bi ${icon}" aria-hidden="true"></i> ${msg}` : msg;
   c.prepend(d);
 }
 
@@ -348,10 +349,10 @@ function playerFire(r,c) {
       ship.sunk=true;
       ship.cells.forEach(([sr,sc])=>{ S.enemyGrid[sr][sc].hit=true; });
       const safe=revealSafeZone(S.enemyGrid, ship);
-      addLog(`☠ YOU SANK THEIR ${ship.name}!`, 'l-sunk');
-      if(safe.length) addLog(`○ ${safe.length} SAFE ZONE CELLS REVEALED`, 'l-safe');
+      addLog(`YOU SANK THEIR ${ship.name}!`, 'l-sunk', 'bi-exclamation-octagon-fill');
+      if(safe.length) addLog(`${safe.length} SAFE ZONE CELLS REVEALED`, 'l-safe', 'bi-shield-check');
     } else {
-      addLog(`▶ HIT AT ${label(r,c)}! FIRE AGAIN!`, 'p-hit');
+      addLog(`HIT AT ${label(r,c)}! FIRE AGAIN!`, 'p-hit', 'bi-bullseye');
     }
 
     flashScreen('enemy-board', r, c, true);
@@ -368,13 +369,13 @@ function playerFire(r,c) {
   } else {
     // MISS → hand off to enemy
     g.miss=true;
-    addLog(`○ MISS AT ${label(r,c)}`, 'p-miss');
+    addLog(`MISS AT ${label(r,c)}`, 'p-miss', 'bi-circle');
     flashScreen('enemy-board', r, c, false);
     renderEnemyBoard();
     updateStats();
     setPhase('ENEMY TURN', false);
     document.getElementById('enemy-board').classList.add('locked');
-    setTimeout(()=>{ if(!S.over) enemyTurn(); }, 950);
+    setTimeout(()=>{ if(!S.over) enemyTurn(); }, BOT_SHOT_DELAY);
   }
 }
 
@@ -466,10 +467,10 @@ function enemyTurn() {
       const safe=revealSafeZone(S.playerGrid, ship);
 
       safe.forEach(([nr,nc])=>ai.tried.add(`${nr},${nc}`));
-      addLog(`☠ ENEMY SANK YOUR ${ship.name}!`, 'l-sunk');
+      addLog(`ENEMY SANK YOUR ${ship.name}!`, 'l-sunk', 'bi-exclamation-octagon-fill');
       ai.onHit(r,c,true);
     } else {
-      addLog(`⚠ ENEMY HIT ${ship.name} AT ${label(r,c)}!`, 'e-hit');
+      addLog(`ENEMY HIT ${ship.name} AT ${label(r,c)}!`, 'e-hit', 'bi-crosshair2');
       ai.onHit(r,c,false);
     }
 
@@ -481,7 +482,7 @@ function enemyTurn() {
     if(S.playerShips.every(s=>s.sunk)) { setTimeout(()=>endGame(false),700); return; }
   } else {
     g.miss=true;
-    addLog(`○ ENEMY MISSED AT ${label(r,c)}`, 'e-miss');
+    addLog(`ENEMY MISSED AT ${label(r,c)}`, 'e-miss', 'bi-circle');
     ai.onMiss(r,c);
     flashScreen('player-board', r, c, false);
     renderPlayerBoard();
@@ -492,7 +493,7 @@ function enemyTurn() {
     S.playerTurn=false;
     setPhase('ENEMY TURN', false);
     document.getElementById('enemy-board').classList.add('locked');
-    setTimeout(()=>{ if(!S.over) enemyTurn(); }, 950);
+    setTimeout(()=>{ if(!S.over) enemyTurn(); }, BOT_SHOT_DELAY);
   } else {
     S.playerTurn=true;
     setPhase('YOUR TURN', true);
@@ -512,6 +513,7 @@ function flashScreen(boardId, r, c, isHit) {
   const y=((r*cs+cs/2+rect.top)/window.innerHeight)*100;
   const sx = x - 12;
   const sy = y - 22;
+  const targetCell = board.children[r*GRID+c];
 
   missile.className='missile-overlay';
   overlay.className='explosion-overlay';
@@ -528,6 +530,15 @@ function flashScreen(boardId, r, c, isHit) {
   overlay.style.setProperty('--ey',`${y}%`);
   overlay.className=`explosion-overlay ${isHit?'hit-flash':'miss-flash'}`;
   setTimeout(()=>{ overlay.className='explosion-overlay'; },500);
+
+  if(targetCell) {
+    targetCell.classList.remove('impact-cell','impact-hit','impact-miss');
+    void targetCell.offsetWidth;
+    targetCell.classList.add('impact-cell', isHit ? 'impact-hit' : 'impact-miss');
+    setTimeout(()=>{
+      targetCell.classList.remove('impact-cell','impact-hit','impact-miss');
+    }, 360);
+  }
 }
 
 function showScreen(id) {
@@ -543,13 +554,13 @@ function endGame(won) {
   document.getElementById('final-hits').textContent    = S.hits;
   document.getElementById('final-accuracy').textContent= acc+'%';
   if(won) {
-    document.getElementById('result-icon').textContent ='🏆';
+    document.getElementById('result-icon').innerHTML ='<i class="bi bi-trophy-fill"></i>';
     document.getElementById('result-label').textContent='VICTORY';
     document.getElementById('result-title').textContent='MISSION COMPLETE';
     document.getElementById('result-title').classList.remove('defeat');
     document.getElementById('result-sub').textContent  ='All enemy vessels destroyed!';
   } else {
-    document.getElementById('result-icon').textContent ='💀';
+    document.getElementById('result-icon').innerHTML ='<i class="bi bi-x-octagon-fill"></i>';
     document.getElementById('result-label').textContent='DEFEAT';
     document.getElementById('result-title').textContent='FLEET DESTROYED';
     document.getElementById('result-title').classList.add('defeat');
