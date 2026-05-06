@@ -553,6 +553,13 @@ html, body {
   :root { --cell: 28px; --coord: 16px; }
 
   .screen {
+    display: none;
+  }
+  .screen.active {
+    display: flex;
+  }
+
+  .screen {
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
